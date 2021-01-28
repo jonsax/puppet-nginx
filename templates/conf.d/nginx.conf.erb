@@ -316,3 +316,9 @@ stream {
 <% end -%>
 }
 <% end -%>
+<% if @fastcgi_buffers -%>
+fastcgi_buffers <%= @fastcgi_buffers %>;
+<% end -%>
+<% if @fastcgi_buffer_size -%>
+fastcgi_buffer_size <%= @fastcgi_buffer_size %>;
+<% end -%>

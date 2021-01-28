@@ -64,6 +64,8 @@ class nginx::config {
   $fastcgi_cache_max_size         = $nginx::fastcgi_cache_max_size
   $fastcgi_cache_path             = $nginx::fastcgi_cache_path
   $fastcgi_cache_use_stale        = $nginx::fastcgi_cache_use_stale
+  $fastcgi_fastcgi_buffers        = $nginx::fastcgi_fastcgi_buffers
+  $fastcgi_buffer_size            = $nginx::fastcgi_buffer_size
   $gzip                           = $nginx::gzip
   $gzip_buffers                   = $nginx::gzip_buffers
   $gzip_comp_level                = $nginx::gzip_comp_level

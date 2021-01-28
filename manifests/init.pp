@@ -103,6 +103,8 @@ class nginx (
   String $fastcgi_cache_max_size                             = '500m',
   Optional[String] $fastcgi_cache_path                       = undef,
   Optional[String] $fastcgi_cache_use_stale                  = undef,
+  Optional[String] $fastcgi_buffers                          = '16 16k',
+  Optional[String] $fastcgi_buffer_size                      = '32k',
   Enum['on', 'off'] $gzip                                    = 'off',
   $gzip_buffers                                              = undef,
   $gzip_comp_level                                           = 1,
