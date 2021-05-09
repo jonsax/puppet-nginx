@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe 'nginx::resource::geo' do
   on_supported_os.each do |os, facts|
-    context "on #{os} with Facter #{facts[:facterversion]} and Puppet #{facts[:puppetversion]}" do
+    context "on #{os}" do
       let(:facts) do
         facts
       end

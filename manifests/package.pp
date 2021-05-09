@@ -1,5 +1,18 @@
-# @summary Manage NGINX package installation
-# @api private
+# Class: nginx::package
+#
+# This module manages NGINX package installation
+#
+# Parameters:
+#
+# There are no default parameters for this class.
+#
+# Actions:
+#
+# Requires:
+#
+# Sample Usage:
+#
+# This class file is not called directly
 class nginx::package {
   $package_name             = $nginx::package_name
   $package_source           = $nginx::package_source
@@ -7,6 +20,7 @@ class nginx::package {
   $package_flavor           = $nginx::package_flavor
   $passenger_package_ensure = $nginx::passenger_package_ensure
   $manage_repo              = $nginx::manage_repo
+  $nginx_source_version     = $nginx::nginx_source_version
 
   assert_private()
 

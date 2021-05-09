@@ -1,6 +1,3 @@
-<% if scope.call_function('versioncmp', [scope['nginx::nginx_version'], '1.15.0']) < 0 -%>
-  ssl on;
-<% end -%>
 <% if @ssl_cert -%>
   ssl_certificate           <%= @ssl_cert %>;
 <% end -%>
@@ -17,12 +14,8 @@
 <%- if defined? @ssl_ecdh_curve -%>
   ssl_ecdh_curve            <%= @ssl_ecdh_curve %>;
 <%- end -%>
-<% if @ssl_cache -%>
   ssl_session_cache         <%= @ssl_cache %>;
-<% end -%>
-<% if @ssl_session_timeout -%>
   ssl_session_timeout       <%= @ssl_session_timeout %>;
-<% end -%>
 <% if @ssl_session_tickets -%>
   ssl_session_tickets       <%= @ssl_session_tickets %>;
 <% end -%>
@@ -32,15 +25,9 @@
 <% if @ssl_buffer_size -%>
   ssl_buffer_size           <%= @ssl_buffer_size %>;
 <% end -%>
-<% if @ssl_protocols -%>
   ssl_protocols             <%= @ssl_protocols %>;
-<% end -%>
-<% if @ssl_ciphers -%>
   ssl_ciphers               <%= @ssl_ciphers %>;
-<% end -%>
-<% if @ssl_prefer_server_ciphers -%>
   ssl_prefer_server_ciphers <%= @ssl_prefer_server_ciphers %>;
-<% end -%>
 <% if @ssl_crl -%>
   ssl_crl                   <%= @ssl_crl %>;
 <% end -%>
@@ -62,8 +49,5 @@
   <%- end -%>
   <%- if @ssl_verify_depth -%>
   ssl_verify_depth          <%= @ssl_verify_depth %>;
-  <%- end -%>
-  <%- if @ssl_password_file -%>
-  ssl_password_file         <%= @ssl_password_file %>;
   <%- end -%>
 <% end -%>

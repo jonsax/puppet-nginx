@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe 'nginx::resource::map' do
   on_supported_os.each do |os, facts|
-    context "on #{os} with Facter #{facts[:facterversion]} and Puppet #{facts[:puppetversion]}" do
+    context "on #{os}" do
       let(:facts) do
         facts
       end
@@ -35,25 +35,6 @@ describe 'nginx::resource::map' do
           it { is_expected.to contain_file("/etc/nginx/conf.d/#{title}-map.conf").that_requires('File[/etc/nginx/conf.d]') }
           it do
             is_expected.to contain_file("/etc/nginx/conf.d/#{title}-map.conf").with(
-              'owner' => 'root',
-              'group'   => 'root',
-              'mode'    => '0644',
-              'ensure'  => 'file',
-              'content' => %r{map \$uri \$#{title}}
-            )
-          end
-        end
-
-        describe 'basic assumptions on stream mapfiles' do
-          let :params do
-            default_params.merge(
-              context: 'stream'
-            )
-          end
-
-          it { is_expected.to contain_file("/etc/nginx/conf.stream.d/#{title}-map.conf").that_requires('File[/etc/nginx/conf.stream.d]') }
-          it do
-            is_expected.to contain_file("/etc/nginx/conf.stream.d/#{title}-map.conf").with(
               'owner' => 'root',
               'group'   => 'root',
               'mode'    => '0644',

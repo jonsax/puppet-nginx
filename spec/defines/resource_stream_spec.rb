@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe 'nginx::resource::streamhost' do
   on_supported_os.each do |os, facts|
-    context "on #{os} with Facter #{facts[:facterversion]} and Puppet #{facts[:puppetversion]}" do
+    context "on #{os}" do
       let(:facts) do
         facts
       end
@@ -100,12 +100,6 @@ describe 'nginx::resource::streamhost' do
               attr: 'ipv6_listen_options',
               value: 'spdy',
               match: %r{\s+listen\s+\[::\]:80 spdy;}
-            },
-            {
-              title: 'should set resolver(s)',
-              attr: 'resolver',
-              value: ['203.0.113.1', '203.0.113.2'],
-              match: %r{\s+resolver\s+203.0.113.1 203.0.113.2;}
             },
             {
               title: 'should contain raw_prepend directives',

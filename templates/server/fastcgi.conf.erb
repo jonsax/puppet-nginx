@@ -25,3 +25,12 @@ fastcgi_param  SERVER_NAME        $server_name;
 
 # PHP only, required if PHP was built with --enable-force-cgi-redirect
 fastcgi_param  REDIRECT_STATUS    200;
+
+# Mitigate httpoxy, see https://httpoxy.org/#fix-now
+fastcgi_param  HTTP_PROXY          "";
+
+# Increase number of fastcgi_buffers
+fastcgi_buffer_size 128k;
+fastcgi_buffers 256 16k; # 4096k total
+fastcgi_busy_buffers_size 256k;
+fastcgi_temp_file_write_size 256k;

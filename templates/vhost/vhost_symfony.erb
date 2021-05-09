@@ -1,0 +1,57 @@
+    # strip app.php/ prefix if it is present
+    rewrite ^/app\.php/?(.*)$ /$1 permanent;
+  
+    location / {
+        index app.php;
+		try_files $uri @rewriteapp;
+    }
+
+    location @rewriteapp {
+        rewrite ^(.*)$ /app.php/$1 last;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+    
+    # Deny access to composer configuration
+    location /composer.lock {
+        return 404;
+    }
+    
+    location /Gemfile {
+        return 404;
+    }
+    
+     # Displays FPM Status
+    location /fpm_status {
+        fastcgi_pass   <%= @fastcgi %>;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+        allow          127.0.0.1;
+        allow          195.26.57.129; # Vax MPLS
+        deny           all;
+    }
+
+    # Displays Nginx Status
+    location /nginx_status {
+        stub_status on;
+        access_log  off;
+        allow       127.0.0.1;
+        allow       195.26.57.129; # Vax MPLS
+        deny        all;
+    }
+    
+    location ~ ^/(app|app_dev)\.php(/|$) {
+        fastcgi_index app.php;
+        fastcgi_pass   <%= @fastcgi %>;
+
+        include        fastcgi_params; ## See /etc/nginx/fastcgi_params
+       
+        fastcgi_split_path_info ^(.+\.php)(/.+)$;
+        fastcgi_param PATH_INFO $fastcgi_path_info;
+        fastcgi_param PATH_TRANSLATED $document_root$fastcgi_path_info;
+        fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        fastcgi_param SERVER_PORT 80;
+    }

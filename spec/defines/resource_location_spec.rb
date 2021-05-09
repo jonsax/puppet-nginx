@@ -3,7 +3,7 @@ require 'digest/md5'
 
 describe 'nginx::resource::location' do
   on_supported_os.each do |os, facts|
-    context "on #{os} with Facter #{facts[:facterversion]} and Puppet #{facts[:puppetversion]}" do
+    context "on #{os}" do
       let(:facts) do
         facts
       end
@@ -31,23 +31,6 @@ describe 'nginx::resource::location' do
           it { is_expected.not_to contain_file('/etc/nginx/fastcgi.conf') }
           it { is_expected.not_to contain_concat__fragment('server1-800-rspec-test-ssl') }
           it { is_expected.not_to contain_file('/etc/nginx/rspec-test_htpasswd') }
-        end
-
-        describe 'server/location configuration files' do
-          context 'when we have one location and one server' do
-            let(:params) { { location: 'my_location', proxy: 'proxy_value', server: 'server1' } }
-
-            it { is_expected.to compile.with_all_deps }
-            it { is_expected.to contain_concat__fragment('server1-500-' + Digest::MD5.hexdigest(params[:location].to_s)) }
-            it { is_expected.not_to contain_concat__fragment('server2-500-' + Digest::MD5.hexdigest(params[:location].to_s)) }
-          end
-          context 'when we have one location and two server' do
-            let(:params) { { location: 'my_location', proxy: 'proxy_value', server: %w[server1 server2] } }
-
-            it { is_expected.to compile.with_all_deps }
-            it { is_expected.to contain_concat__fragment('server1-500-' + Digest::MD5.hexdigest(params[:location].to_s)) }
-            it { is_expected.to contain_concat__fragment('server2-500-' + Digest::MD5.hexdigest(params[:location].to_s)) }
-          end
         end
 
         describe 'server/location_header template content' do
@@ -101,35 +84,18 @@ describe 'nginx::resource::location' do
               match: '    satisfy any;'
             },
             {
-              title: 'should set limit_zone',
-              attr: 'limit_zone',
-              value: 'myzone1',
-              match: '    limit_req zone=myzone1;'
-            },
-            {
               title: 'should set expires',
               attr: 'expires',
               value: '33d',
               match: '    expires 33d;'
             },
             {
-              title: 'should set location_allow (flat array)',
+              title: 'should set location_allow',
               attr: 'location_allow',
               value: %w[127.0.0.1 10.0.0.1],
               match: [
                 '    allow 127.0.0.1;',
                 '    allow 10.0.0.1;'
-              ]
-            },
-            {
-              title: 'should set location_allow (nested array)',
-              attr: 'location_allow',
-              value: ['127.0.0.1', '10.0.0.1', ['127.0.0.2', '10.0.0.2']],
-              match: [
-                '    allow 127.0.0.1;',
-                '    allow 10.0.0.1;',
-                '    allow 127.0.0.2;',
-                '    allow 10.0.0.2;'
               ]
             },
             {
@@ -200,18 +166,6 @@ describe 'nginx::resource::location' do
               attr: 'rewrite_rules',
               value: [],
               notmatch: %r{rewrite}
-            },
-            {
-              title: 'should not set absolute_redirect',
-              attr: 'absolute_redirect',
-              value: :undef,
-              notmatch: %r{absolute_redirect}
-            },
-            {
-              title: 'should set absolute_redirect off',
-              attr: 'absolute_redirect',
-              value: 'off',
-              match: '  absolute_redirect off;'
             },
             {
               title: 'should set auth_basic',
@@ -375,12 +329,6 @@ describe 'nginx::resource::location' do
               match: '    autoindex on;'
             },
             {
-              title: 'should set autoindex_format',
-              attr: 'autoindex_format',
-              value: 'html',
-              match: '    autoindex_format html;'
-            },
-            {
               title: 'should set try_file(s)',
               attr: 'try_files',
               value: %w[name1 name2],
@@ -444,36 +392,18 @@ describe 'nginx::resource::location' do
             let(:params) do
               default_params.merge(
                 'add_header' => {
-                  'header 1' => 'test value 1',
-                  'header 2' => { 'test value 2' => 'tv2' },
-                  'header 3' => { '' => '\'test value 3\' tv3' }
+                  'X-Frame-Options' => 'SAMEORIGIN',
+                  'X-Powered-By'    => 'Puppet'
                 }
               )
             end
 
-            it 'contains 3 add_header lines' do
+            it 'contains both add_header lines' do
               is_expected.to contain_concat__fragment('server1-500-' + Digest::MD5.hexdigest('location')).
-                with_content(%r{^\s+add_header\s+"header 1"\s+"test value 1";$})
+                with_content(%r{^\s+add_header\s+"X-Frame-Options"\s+"SAMEORIGIN";$})
               is_expected.to contain_concat__fragment('server1-500-' + Digest::MD5.hexdigest('location')).
-                with_content(%r{^\s+add_header\s+"header 2"\s+"test value 2" tv2;$})
-              is_expected.to contain_concat__fragment('server1-500-' + Digest::MD5.hexdigest('location')).
-                with_content(%r{^\s+add_header\s+"header 3"\s+'test value 3' tv3;$})
+                with_content(%r{^\s+add_header\s+"X-Powered-By"\s+"Puppet";$})
             end
-          end
-        end
-
-        describe 'server_location_gzip template content' do
-          let :params do
-            {
-              location: 'location',
-              server: 'server1',
-              gzip_static: 'on'
-            }
-          end
-
-          it 'contain gzip_static if set' do
-            is_expected.to contain_concat__fragment('server1-500-' + Digest::MD5.hexdigest('location')).
-              with_content(%r{^\s+gzip_static\s+on;$})
           end
         end
 
@@ -551,26 +481,6 @@ describe 'nginx::resource::location' do
             it 'does not set autoindex' do
               is_expected.to contain_concat__fragment('server1-500-' + Digest::MD5.hexdigest('location')).
                 without_content(%r{^[ ]+autoindex[^;]+;})
-            end
-          end
-
-          context "when autoindex_localtime is 'on'" do
-            let(:params) { default_params.merge(autoindex_localtime: 'on') }
-
-            it { is_expected.to contain_concat__fragment('server1-500-' + Digest::MD5.hexdigest('location')) }
-            it 'sets autoindex_localtime' do
-              is_expected.to contain_concat__fragment('server1-500-' + Digest::MD5.hexdigest('location')).
-                with_content(%r{^[ ]+autoindex_localtime\s+on;})
-            end
-          end
-
-          context 'when autoindex_localtime is not set' do
-            let(:params) { default_params }
-
-            it { is_expected.to contain_concat__fragment('server1-500-' + Digest::MD5.hexdigest('location')) }
-            it 'does not set autoindex_localtime' do
-              is_expected.to contain_concat__fragment('server1-500-' + Digest::MD5.hexdigest('location')).
-                without_content(%r{^[ ]+autoindex_localtime[^;]+;})
             end
           end
         end
@@ -978,24 +888,6 @@ describe 'nginx::resource::location' do
               attr: 'proxy_buffering',
               value: 'on',
               match: %r{\s+proxy_buffering\s+on;}
-            },
-            {
-              title: 'should set proxy_request_buffering',
-              attr: 'proxy_request_buffering',
-              value: 'on',
-              match: %r{\s+proxy_request_buffering\s+on;}
-            },
-            {
-              title: 'should set proxy_max_temp_file_size',
-              attr: 'proxy_max_temp_file_size',
-              value: '1024m',
-              match: %r{\s+proxy_max_temp_file_size\s+1024m;}
-            },
-            {
-              title: 'should set proxy_busy_buffers_size',
-              attr: 'proxy_busy_buffers_size',
-              value: '16k',
-              match: %r{\s+proxy_busy_buffers_size\s+16k;}
             }
           ].each do |param|
             context "when #{param[:attr]} is #{param[:value]}" do

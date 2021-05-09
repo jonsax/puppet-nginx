@@ -1,0 +1,338 @@
+    # Base Location
+    location / {
+    	<% if @location_allow -%><% @location_allow.each do |allow_rule| -%>
+		    allow <%= allow_rule %>;
+		<% end -%><% end -%>
+		<% if @location_deny -%><% @location_deny.each do |deny_rule| -%>
+		    deny <%= deny_rule %>;
+		    <% if @sitedown_url -%>
+		        error_page 403 <%= @sitedown_url %>;
+		    <% end -%>
+		<% end -%><% end -%>
+
+        index index.html index.php;    # Display Static File
+        try_files $uri $uri/ @handler; # Pass URI to Front Handler
+        expires 30d;                   # Cache Assets
+    }
+
+    # Denied Locations
+    location ^~ /app/                { deny all; }
+    location ^~ /dev/                { deny all; }
+    location ^~ /downloader/         { deny all; }
+    location ^~ /includes/           { deny all; }
+    location ^~ /lib/                { deny all; }
+    location ^~ /media/downloadable/ { deny all; }
+    location ^~ /pkginfo/            { deny all; }
+    location ^~ /report/config.xml   { deny all; }
+    location ^~ /var/                { deny all; }
+
+    # Deny access to composer lock
+    location /composer.lock {
+        return 404;
+    }
+
+    # Deny access to composer json
+    location /composer.json {
+        return 404;
+    }
+    
+    # Deny access to n98-magerun
+    location /n98-magerun.phar {
+        return 404;
+    }
+    
+    location /Gemfile {
+        return 404;
+    }
+    
+    # Turn off Logs for Media
+    location ~* "^.+\.(jpg|jpeg|gif|css|png|js|ico|pdf|zip|tar|t?gz|mp3|wav|swf|mp4|webm)$" {
+        expires    max;
+        add_header Cache-Control public;
+        access_log off;
+    }
+
+    # Deny access to registration downloads
+    location ~ /media/registration/downloads/(.+)\.(jpg|png)$ {
+        allow          195.26.57.129; # Vax MPLS
+        allow          195.26.58.27;  # German Office
+        deny all;
+        expires        off;
+        break;
+    }
+
+    location ~ downloads/ {
+       rewrite / /index.php last;
+    }
+
+    location ~* "^.+\.(xml)$" {
+        add_header X-Frame-Options SAMEORIGIN;
+    }
+    
+  	# redirect denied - e.g. vax sale to .co.uk, do not use on vax.co.uk
+  	location /sitedown.htm {
+        rewrite ^(.*) <%= @sitedown_url %> redirect;
+    }
+
+    # Restrict Access to Export Folder
+    location /var/export/ {
+        auth_basic           "Restricted";
+        auth_basic_user_file /etc/nginx/var_export_htpasswd;
+        autoindex            on;
+    }
+    
+    # vax dashboard
+    location /var/site-dashboard/system-info.json {
+        allow          195.26.57.129; # Vax MPLS
+        deny all;
+        expires        off;
+    }
+    
+    location /var/site-dashboard/last-deployed.json {
+        allow          195.26.57.129; # Vax MPLS
+        deny all;
+        expires        off;
+    }
+
+    # API Location
+    location /api {
+        allow          10.183.144.14;   # Admin 1
+        allow          10.181.229.136;  # Nginx 1
+        allow          10.178.195.172;  # Oreck Careline - Private
+        allow          162.13.129.184;  # Oreck Careline - Public
+        allow          162.13.51.67;    # Careline UK Prod New
+        allow          141.0.36.86;		# Vax WaveNet
+        allow          146.255.5.146;	# Vax BT
+        allow          195.26.57.129;	# Vax MPLS
+        allow          87.120.61.231;   # Pentagon
+        allow          31.13.221.124;   # Pentagon
+        allow          87.120.61.69;    # Pentagon
+        allow          87.120.61.53;    # Pentagon
+        allow          195.26.58.28;    # Germany
+        deny           all;
+        rewrite        ^/api/([a-z][0-9a-z_]+)/?$ /api.php?type=$1 last;    # Enable Light API Calls
+        rewrite        ^/api/rest /api.php?type=rest last;                  # Rewrite API Calls
+        rewrite        ^/api/v2_soap /api.php?type=v2_soap last;
+    }
+
+    # Global Scripts
+    location ~ /(scripts/(.+)\.php|scripts/googlebase/(.+)\.php|scripts/mailbox/(.+)\.php|site/site-dashboard/(.+)\.php)$ {
+        deny all;
+    }
+
+    # Site Scripts
+    location ~ /site/(.+)\.php|site/apc/(.+)\.php|site/git/(.+)\.php|site/php/(.+)\.php|site/opcache/(.+)\.php|site/loadtesting/(.+)\.php$ {
+        allow          127.0.0.1;
+        allow          141.0.36.86;     # Vax WaveNet
+        allow          146.255.5.146;	# Vax BT
+        allow	       195.26.57.129;	# Vax MPLS
+        allow	       188.111.17.83;	# Dirt Devil - TTI Guest
+        allow	       10.178.205.170; 	# Magento Prod
+        allow	       10.179.196.104; 	# Magento Prod Admin
+        allow	       10.179.128.42; 	# Magento Stage
+        allow	       10.179.8.226; 	# Magento Dev
+        allow	       10.189.246.44; 	# Rackspace Load Balancer
+        allow	       10.190.254.182; 	# Rackspace Load Balancer Sale
+        allow		   176.34.251.87;	# Gatling Server
+        allow          86.153.127.59; # Alex - Home
+        allow          101.99.14.19; # VT 1
+        allow          118.70.182.96; # VT 2
+        deny all;
+        expires        off;
+        fastcgi_pass   <%= @fastcgi %>;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+    
+    # Error Reporting
+    location ~ /errors {
+        allow          127.0.0.1;
+        allow          141.0.36.86;     # Vax WaveNet
+        allow          146.255.5.146;	# Vax BT
+        allow	       195.26.57.129;	# Vax MPLS
+        allow	       10.178.205.170; 	# Magento Prod
+        allow	       10.179.196.104; 	# Magento Prod Admin
+        allow	       10.179.128.42; 	# Magento Stage
+        allow	       10.179.8.226; 	# Magento Dev
+        allow	       10.189.246.44; 	# Rackspace Load Balancer
+        allow	       10.190.254.182; 	# Rackspace Load Balancer Sale
+        deny all;
+        expires        off;
+        fastcgi_pass   <%= @fastcgi %>;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+
+    # Hidden Files
+    location  /. {
+        return 404;
+    }
+
+    # Rewrite Internal Requests
+    location @handler {
+        rewrite / /index.php;
+    }
+
+    # Rewrite PHP Requests
+    location ~ .php/ {
+        rewrite ^(.*.php)/ $1 last;
+    }
+
+    # Displays FPM Status
+    location /fpm_status {
+        fastcgi_pass   <%= @fastcgi %>;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+        allow          127.0.0.1;
+        allow          141.0.36.86;	# Vax WaveNet
+        allow          146.255.5.146;	# Vax BT
+        allow	          195.26.57.129;	# Vax MPLS
+        deny           all;
+    }
+
+    # Displays Nginx Status
+    location /nginx_status {
+        stub_status on;
+        access_log  off;
+        allow       127.0.0.1;
+        allow       141.0.36.86;	# Vax WaveNet
+        allow	    146.255.5.146;	# Vax BT
+        allow	    195.26.57.129;	# Vax MPLS
+        deny        all;
+    }
+
+    location ^~ /.well-known/apple-developer-merchantid-domain-association.txt {
+        default_type "text/plain";
+    }
+
+    ### Hide /well-known subdirectory and return 404 on all requests.
+    location = /.well-known/ {
+        return 404;
+    }
+
+    # Deny access to cron.php
+    location ~ cron\.php {
+      deny all;
+    }
+  
+    # Deny access to other php files in Magento root
+    location ~* (api\.php|import_coupons\.php|install\.php|m_test_search_speed\.php|upgrade\.php)$ {
+      allow          127.0.0.1;
+      allow          10.181.229.136;  # Nginx 1
+      allow          10.178.195.172;  # Oreck Careline - Private
+      allow          162.13.129.184;  # Oreck Careline - Public
+      allow          162.13.51.67;    # Careline UK Prod New
+      allow          195.26.57.129;   # Vax MPLS
+      allow          87.120.61.53;    # Pentagon on Staging
+      deny           all;
+
+      expires        off;
+
+      include        fastcgi_params;
+      fastcgi_pass   <%= @api_fastcgi %>;
+      fastcgi_param  SCRIPT_FILENAME           $document_root$fastcgi_script_name;
+      fastcgi_param  MAGE_RUN_CODE             <%= @mage_run_code %>;
+      fastcgi_param  MAGE_RUN_TYPE             <%= @mage_run_type %>;
+      <% if @mage_is_developer_mode %>
+        fastcgi_param  MAGE_IS_DEVELOPER_MODE    <%= @mage_is_developer_mode %>;
+      <% end %>
+
+      break;
+    }
+
+    location /gdpr {
+        allow          127.0.0.1;
+        allow          10.181.229.136;  # Nginx 1
+        allow          162.13.51.67;    # Careline UK Prod New
+        allow          195.26.57.129;   # Vax MPLS
+        deny           all;
+        # Catch 404s
+        if (!-e $request_filename) {
+            rewrite / /index.php last;
+        }
+
+        # Do not cache dynamic content
+        expires        off;
+
+        fastcgi_keep_conn on;
+        fastcgi_read_timeout 900s;
+
+        fastcgi_pass   <%= @api_fastcgi %>; # Increase net.core.somaxconn=500 in /etc/sysctl.conf
+
+        fastcgi_param  SCRIPT_FILENAME           $document_root$fastcgi_script_name;
+        fastcgi_param  MAGE_RUN_CODE             <%= @mage_run_code %>;
+        fastcgi_param  MAGE_RUN_TYPE             <%= @mage_run_type %>;
+        <% if @mage_is_developer_mode %>
+            fastcgi_param  MAGE_IS_DEVELOPER_MODE    <%= @mage_is_developer_mode %>;
+        <% end %>
+        include        fastcgi_params;
+    }
+
+    # Magento Location
+    location ~ \.php$ {
+		<% if @fallback_fastcgi -%>
+			proxy_intercept_errors on;
+		    error_page 502 = @fallback;
+        <% end -%>
+
+		# Catch 404s
+        if (!-e $request_filename) {
+            rewrite / /index.php last;
+        }
+    
+        # Do not cache dynamic content
+        expires        off;
+
+        fastcgi_keep_conn on;
+        fastcgi_read_timeout 900s;
+
+        fastcgi_pass   <%= @fastcgi %>; # Increase net.core.somaxconn=500 in /etc/sysctl.conf
+
+        fastcgi_param  SCRIPT_FILENAME           $document_root$fastcgi_script_name;
+        fastcgi_param  MAGE_RUN_CODE             <%= @mage_run_code %>;
+        fastcgi_param  MAGE_RUN_TYPE             <%= @mage_run_type %>;
+        <% if @mage_is_developer_mode %>
+        fastcgi_param  MAGE_IS_DEVELOPER_MODE    <%= @mage_is_developer_mode %>;
+        <% end %>
+        include        fastcgi_params;
+
+        # Increase timeout for longer running scripts
+        location ~* ^/(index\.php/<%= @admin_url %>|<%= @admin_url %>)(.*)$ {
+            fastcgi_param PHP_VALUE "max_execution_time = 600";
+
+            <% if @admin_fastcgi -%>
+                fastcgi_pass <%= @admin_fastcgi %>;
+            <% end -%>
+        }
+    }
+
+    <% if @fallback_fastcgi -%>
+    location @fallback {
+	    # Catch 404s
+        if (!-e $request_filename) {
+            rewrite / /index.php last;
+        }
+
+        # Do not cache dynamic content
+        expires        off;
+
+        fastcgi_keep_conn on;
+        fastcgi_read_timeout 900s;
+
+        fastcgi_pass   <%= @fallback_fastcgi %>; # Increase net.core.somaxconn=500 in /etc/sysctl.conf
+
+        fastcgi_param  SCRIPT_FILENAME           $document_root$fastcgi_script_name;
+
+        <% if @mage_run_code -%>
+        fastcgi_param  MAGE_RUN_CODE             <%= @mage_run_code %>;
+        <% end -%>
+        <% if @mage_run_type -%>
+        fastcgi_param  MAGE_RUN_TYPE             <%= @mage_run_type %>;
+        <% end -%>
+        <% if @mage_is_developer_mode %>
+        fastcgi_param  MAGE_IS_DEVELOPER_MODE    <%= @mage_is_developer_mode %>;
+        <% end %>
+        include        fastcgi_params;
+	}
+	<% end -%>

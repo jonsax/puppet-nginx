@@ -1,6 +1,6 @@
 {
   "name": "puppet-nginx",
-  "version": "3.0.1-rc0",
+  "version": "0.12.1-rc0",
   "author": "Vox Pupuli",
   "summary": "Puppet NGINX management module",
   "license": "MIT",
@@ -9,26 +9,26 @@
   "issues_url": "https://github.com/voxpupuli/puppet-nginx/issues",
   "dependencies": [
     {
-      "name": "puppetlabs/concat",
-      "version_requirement": ">= 4.1.0 < 7.0.0"
+      "name": "puppetlabs/stdlib",
+      "version_requirement": ">= 4.22.0 <5.0.0"
     },
     {
-      "name": "puppetlabs/stdlib",
-      "version_requirement": ">= 5.0.0 < 7.0.0"
+      "name": "puppetlabs/concat",
+      "version_requirement": ">= 3.0.0 <5.0.0"
     }
   ],
   "requirements": [
     {
       "name": "puppet",
-      "version_requirement": ">= 6.1.0 < 8.0.0"
+      "version_requirement": ">= 4.10.0 < 6.0.0"
     }
   ],
   "operatingsystem_support": [
     {
       "operatingsystem": "Debian",
       "operatingsystemrelease": [
-        "9",
-        "10"
+        "8",
+        "9"
       ]
     },
     {
@@ -36,18 +36,6 @@
     },
     {
       "operatingsystem": "RedHat",
-      "operatingsystemrelease": [
-        "7"
-      ]
-    },
-    {
-      "operatingsystem": "CentOS",
-      "operatingsystemrelease": [
-        "7"
-      ]
-    },
-    {
-      "operatingsystem": "VirtuozzoLinux",
       "operatingsystemrelease": [
         "6",
         "7"
@@ -77,9 +65,8 @@
     {
       "operatingsystem": "Ubuntu",
       "operatingsystemrelease": [
-        "16.04",
-        "18.04",
-        "20.04"
+        "14.04",
+        "16.04"
       ]
     }
   ]

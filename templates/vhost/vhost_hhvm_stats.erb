@@ -1,0 +1,7 @@
+    location ~ {
+    	allow	       195.26.57.129;	# Vax MPLS
+        deny           all;
+        
+    	fastcgi_pass   127.0.0.1:8088;
+    	include        fastcgi_params;
+	}

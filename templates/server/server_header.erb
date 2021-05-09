@@ -1,5 +1,5 @@
 # MANAGED BY PUPPET
-<% if @rewrite_www_to_non_www || @rewrite_non_www_to_www -%>
+<% if @rewrite_www_to_non_www -%>
 <%- @server_name.each do |s| -%>
 server {
   <%- if @listen_ip.is_a?(Array) then -%>
@@ -19,21 +19,12 @@ server {
     <%- end -%>
   <%- end -%>
 <%= scope.function_template(["nginx/server/server_ipv6_listen.erb"]) %>
-<%- if @rewrite_www_to_non_www -%>
   server_name  www.<%= s.gsub(/^www\./, '') %>;
   <%- if @ssl_redirect or @ssl_only -%>
   return       301 https://<%= s.gsub(/^www\./, '') %><% if @_ssl_redirect_port.to_i != 443 %>:<%= @_ssl_redirect_port %><% end %>$request_uri;
   <%- else -%>
   return       301 http://<%= s.gsub(/^www\./, '') %>$request_uri;
   <%- end -%>
-<%- elsif @rewrite_non_www_to_www -%>
-  server_name  <%= s %>;
-  <%- if @ssl_redirect or @ssl_only -%>
-  return       301 https://www.<%= s %><% if @_ssl_redirect_port.to_i != 443 %>:<%= @_ssl_redirect_port %><% end %>$request_uri;
-  <%- else -%>
-  return       301 http://www.<%= s %>$request_uri;
-  <%- end -%>
-<%- end -%>
 }
 
 <% end -%>
@@ -56,13 +47,7 @@ server {
   <%- end -%>
 <%- end -%>
 <%= scope.function_template(["nginx/server/server_ipv6_listen.erb"]) %>
-<%- if @rewrite_www_to_non_www -%>
-  server_name           <%= @server_name.join("  ").gsub(/(^| )(www\.)?(?=[a-z0-9])/, '') %>;
-<%- elsif @rewrite_non_www_to_www -%>
-  server_name           <%= @server_name.join("  ").gsub(/(^| )(?=[a-z0-9])/, 'www.') %>;
-<%- else %>
-  server_name           <%= @server_name.join(" ") %>;
-<%- end -%>
+  server_name           <%= @rewrite_www_to_non_www ? @server_name.join("  ").gsub(/(^| )(www\.)?(?=[a-z0-9])/, '') : @server_name.join(" ") %>;
 <%- if instance_variables.any? { |iv| iv.to_s.include? 'auth_basic' } -%>
   <%- if defined? @auth_basic -%>
   auth_basic           "<%= @auth_basic %>";
@@ -87,9 +72,6 @@ server {
 <% end -%>
 <% if defined? @gzip_types -%>
   gzip_types <%= @gzip_types %>;
-<% end -%>
-<% if defined? @gzip_static -%>
-  gzip_static <%= @gzip_static %>;
 <% end -%>
 <%# make sure that allow comes before deny by forcing the allow key (if it -%>
 <%# exists) to be first in the output order.  The hash keys also need to be -%>
@@ -133,9 +115,16 @@ server {
 <% if Array(@resolver).count > 0 -%>
   resolver                  <% Array(@resolver).each do |r| %> <%= r %><% end %>;
 <% end -%>
-  <%= scope.function_template(["nginx/server/locations/headers.erb"]) %>
+<% if @add_header -%>
+  <%- @add_header.keys.sort.each do |key| -%>
+  add_header              "<%= key %>" "<%= @add_header[key] %>";
+  <%- end -%>
+<% end -%>
 <% if @maintenance -%>
   <%= @maintenance_value %>;
+<% end -%>
+<% if @ssl_redirect -%>
+  return 301 https://$host<% if @_ssl_redirect_port.to_i != 443 %>:<%= @_ssl_redirect_port %><% end %>$request_uri;
 <% end -%>
 <% if @index_files and @index_files.count > 0 and not @ssl_only -%>
   index <% Array(@index_files).each do |i| %> <%= i %><% end %>;
@@ -143,23 +132,11 @@ server {
 <% if defined? @autoindex -%>
   autoindex <%= @autoindex %>;
 <% end -%>
-<% if defined? @autoindex_exact_size -%>
-  autoindex_exact_size <%= @autoindex_exact_size %>;
-<% end -%>
-<% if defined? @autoindex_format -%>
-  autoindex_format <%= @autoindex_format %>;
-<% end -%>
-<% if defined? @autoindex_localtime -%>
-  autoindex_localtime <%= @autoindex_localtime %>;
-<% end -%>
 <% if defined? @log_by_lua -%>
   log_by_lua '<%= @log_by_lua %>';
 <% end -%>
 <% if defined? @log_by_lua_file -%>
   log_by_lua_file "<%= @log_by_lua_file %>";
-<% end -%>
-<% if @absolute_redirect -%>
-  absolute_redirect <%= @absolute_redirect %>;
 <% end -%>
 <% if @access_log.is_a?(Array) -%>
   <%- @access_log.each do |log_item| -%>
@@ -189,9 +166,9 @@ server {
   error_page  <%= key %> <%= @error_pages[key] %>;
   <%- end -%>
 <% end -%>
-<% if @ssl_redirect -%>
 
-  location / {
-    return 301 https://$host<% if @_ssl_redirect_port.to_i != 443 %>:<%= @_ssl_redirect_port %><% end %>$request_uri;
-  }
+<% if @ssl_redirect_header -%>
+if ($http_x_forwarded_proto = "http") {
+    return 301 https://$server_name$request_uri;
+}
 <% end -%>
