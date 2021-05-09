@@ -17,4 +17,5 @@ Puppetfile.lock
 *.iml
 .*.sw?
 .yardoc/
+.DS_Store
 Guardfile
