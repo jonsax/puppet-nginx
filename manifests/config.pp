@@ -1,4 +1,4 @@
-# Class: nginx::config
+ Class: nginx::config
 #
 # This module manages NGINX bootstrap and configuration
 #
