@@ -1,0 +1,70 @@
+#laravel nginx include template
+
+<% if @laravel_root -%>
+root <%= @laravel_root %>;
+<% end -%>
+
+index index.php;
+autoindex off;
+
+location ~ /\.ht {
+  deny all;
+}
+
+location ^~ /tiktokpanel/ {
+    add_header Cache-Control no-cache;
+    add_header Access-Control-Allow-Origin *;
+    add_header "Access-Control-Allow-Methods" "GET, POST, OPTIONS, HEAD";
+    add_header "Access-Control-Allow-Headers" "Authorization, Origin, X-Requested-With, Content-Type, Accept";
+    expires 1s;
+}
+
+location   ~* "^.+\.(jpg|jpeg|gif|css|png|js|ico|pdf|zip|tar|t?gz|mp3|wav|swf|mp4|webm)$" {
+  expires    max;
+  add_header Cache-Control public;
+  access_log off;
+}
+
+#    add_header X-Frame-Options "SAMEORIGIN";
+#    add_header X-XSS-Protection "1; mode=block";
+#    add_header X-Content-Type-Options "nosniff";
+
+# Deny access to composer configuration
+location /composer.lock {
+  return 404;
+}
+
+location /Gemfile {
+  return 404;
+}
+
+location /fpm_status {
+  deny all;
+}
+
+location /nginx_status {
+  deny all;
+}
+
+location / {
+  try_files $uri $uri/ /index.php?$query_string;
+}
+
+location ~ \.php$ {
+  fastcgi_split_path_info ^(.+\.php)(/.+)$;
+
+  fastcgi_index index.php;
+  fastcgi_pass   <%= @fastcgi %>;
+
+  # keep alive
+  fastcgi_keep_conn on;
+
+  fastcgi_param  PHP_VALUE "memory_limit=768M \n max_execution_time=18000";
+  fastcgi_read_timeout 600s;
+  fastcgi_connect_timeout 600s;
+
+  fastcgi_param  HTTPS $https;
+  fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+
+  include        fastcgi_params; ## See /etc/nginx/fastcgi_params
+}
